@@ -33,7 +33,7 @@ namespace eosiosystem {
 
 
    /**
-    *  When buying ram the payer irreversiblly transfers quant to system contract and only
+    *  When buying ram the payer irreversibly transfers quant to system contract and only
     *  the receiver may reclaim the tokens via the sellram action. The receiver pays for the
     *  storage of all database records associated with this action.
     *
@@ -158,13 +158,16 @@ namespace eosiosystem {
       }
    }
 
+   /* TELOS BEGIN DELETION
    void validate_b1_vesting( int64_t stake ) {
-      const int64_t base_time = 1527811200; /// 2018-06-01
+      const int64_t base_time = 1527811200; /// Friday, June 1, 2018 12:00:00 AM UTC
+      const int64_t current_time = 1638921540; /// Tuesday, December 7, 2021 11:59:00 PM UTC
       const int64_t max_claimable = 100'000'000'0000ll;
-      const int64_t claimable = int64_t(max_claimable * double(current_time_point().sec_since_epoch() - base_time) / (10*seconds_per_year) );
+      const int64_t claimable = int64_t(max_claimable * double(current_time - base_time) / (10*seconds_per_year) );
 
       check( max_claimable - claimable <= stake, "b1 can only claim their tokens over 10 years" );
    }
+   TELOS END DELETION */
 
    void system_contract::changebw( name from, const name& receiver,
                                    const asset& stake_net_delta, const asset& stake_cpu_delta, bool transfer )
@@ -327,7 +330,7 @@ namespace eosiosystem {
                                       from
             );
             out.delay_sec = refund_delay_sec;
-            eosio::cancel_deferred( from.value ); // TODO: Remove this line when replacing deferred trxs is fixed
+            eosio::cancel_deferred( from.value ); // TODO: Remove this line when replacing deferred transactions is fixed
             out.send( from.value, from, true );
          } else {
             eosio::cancel_deferred( from.value );
@@ -360,9 +363,11 @@ namespace eosiosystem {
 
       check( 0 <= voter_itr->staked, "stake for voting cannot be negative" );
 
+      /* TELOS BEGIN DELETION
       if( voter == "b1"_n ) {
          validate_b1_vesting( voter_itr->staked );
       }
+      TELOS END DELETION */
 
       if( voter_itr->producers.size() || voter_itr->proxy ) {
          update_votes( voter, voter_itr->proxy, voter_itr->producers, false );
@@ -380,6 +385,12 @@ namespace eosiosystem {
       check( !transfer || from != receiver, "cannot use transfer flag if delegating to self" );
 
       changebw( from, receiver, stake_net_quantity, stake_cpu_quantity, transfer);
+      // TELOS BEGIN
+      //notify telos decide of stake change
+      if (from == receiver) {
+         require_recipient("telos.decide"_n);
+      }
+      // TELOS END
    } // delegatebw
 
    void system_contract::undelegatebw( const name& from, const name& receiver,
@@ -389,10 +400,16 @@ namespace eosiosystem {
       check( unstake_cpu_quantity >= zero_asset, "must unstake a positive amount" );
       check( unstake_net_quantity >= zero_asset, "must unstake a positive amount" );
       check( unstake_cpu_quantity.amount + unstake_net_quantity.amount > 0, "must unstake a positive amount" );
-      check( _gstate.thresh_activated_stake_time != time_point(),
-             "cannot undelegate bandwidth until the chain is activated (at least 15% of all tokens participate in voting)" );
+      check( _gstate.block_num > block_num_network_activation || _gstate.thresh_activated_stake_time > time_point(),
+                    "cannot undelegate bandwidth until the chain is activated (1,000,000 blocks produced)" );
 
       changebw( from, receiver, -unstake_net_quantity, -unstake_cpu_quantity, false);
+      // TELOS BEGIN
+      //notify telos decide of stake change
+      if (from == receiver) {
+         require_recipient("telos.decide"_n);
+      }
+      // TELOS END
    } // undelegatebw
 
 
