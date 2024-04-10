@@ -4,7 +4,7 @@ CryptoGames는 기존 EOSIO의 블록 생산자의 페널티와 보상 지급방
 
 EOSIO 기반 블록체인에서 블록 생산자 등록 및 투표, CPU 및 네트워크 대역폭에 대한 토큰 스테이킹, RAM 구매, 다중 서명 등의 기능을 실행하려면 여러 스마트 컨트랙트가 배포되어야합니다. 이러한 스마트 계약에는 bios, system, msig가 존재합니다. 
 
-CyptoGames가 수정한 코드는 위 스마트 컨트랙트에 포함됩니다.
+CyptoGames가 수정한 코드는 위 스마트 컨트랙트에 포함되며 구체적으로는 /contracts/eosio.system, /contracts/eosio.token 디렉터리에 있습니다.
 
 
 Code modifications
